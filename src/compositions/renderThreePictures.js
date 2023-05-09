@@ -53,7 +53,7 @@ function renderPicture1(context, image1, width, height, time) {
   context.translate(x * width, y * height);
   context.rotate(rotate * Math.PI / 180);
 
-  renderPolaroidPicture(context, image1, 'Caption 1', 0.3201 * width, 0.7229 * height);
+  renderPolaroidPicture(context, image1, 'Coconut Beach', 0.3201 * width, 0.7229 * height, 0);
 
   context.restore();
 }
@@ -86,7 +86,7 @@ function renderPicture2(context, image1, width, height, time) {
   context.translate(x * width, y * height);
   context.rotate(rotate * Math.PI / 180);
 
-  renderPolaroidPicture(context, image1, 'Caption 2', 0.3201 * width, 0.7229 * height);
+  renderPolaroidPicture(context, image1, 'Romantic Sea', 0.3201 * width, 0.7229 * height, 1);
 
   context.restore();
 }
@@ -119,7 +119,7 @@ function renderPicture3(context, image1, width, height, time) {
   context.translate(x * width, y * height);
   context.rotate(rotate * Math.PI / 180);
 
-  renderPolaroidPicture(context, image1, 'Caption 3', 0.3201 * width, 0.7229 * height);
+  renderPolaroidPicture(context, image1, 'Coconut Leave', 0.3201 * width, 0.7229 * height, 2);
 
   context.restore();
 }

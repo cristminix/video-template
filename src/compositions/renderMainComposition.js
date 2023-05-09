@@ -19,7 +19,7 @@ export function renderMainComposition(
     { time: 6.59, value: 0 },
     { time: 7.63, value: 1, easing: 'cubic-in-out' },
   ], time);
-
+  // console.log(slideProgress)
   // Scene 1 – The three polaroid pictures
 
   // Move the slide over 25% of the canvas width while adjusting its opacity with globalAlpha

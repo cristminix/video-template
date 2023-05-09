@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -6,10 +6,18 @@ import {interpolateKeyframes} from "./fn"
 
 import {renderMainComposition} from "./compositions/renderMainComposition"
 
+    let isPlaying = false
 
 function App() {
     const [frames, setFrames] = useState([])
     const [dir, setDir] = useState('video-3')
+
+    const [pstop, setStop] = useState(false)
+    const [ppause, setPause] = useState(false)
+    const [pplay, setPlay] = useState(false)
+
+    const pstopRef = useRef(null)
+    pstopRef.current = pstop
 
     const [vFrames1, setVFrames1] = useState({frames:[], base: null})
     const [vFrames2, setVFrames2] = useState({frames:[], base: null})
@@ -18,9 +26,11 @@ function App() {
     const [playingCanvas,playCanvas] = useState(0)
 
     const duration = 9.15
-    const frameRate = 4
+    const frameRate = 60
+    const frameSkip = 3
     const frameCount = Math.floor(duration * frameRate)
     const images = []
+    let pause = false
     
     const images1 = []
     const images2 = []
@@ -56,32 +66,7 @@ function App() {
             time
         )
 
-        /*
-        if(!images[frameNumber]){
-            images[frameNumber] = new Image()
-            const base = `tmp/${dir}`
-            images[frameNumber].src = `${base}/${frames[frameNumber]}`
-        }
-        // calculate the progress of the animation from 0 to 1
-        // let t = time / duration
-
-        // context.drawImage(logo, 100 + (t * 550), 100, 500, 500)
-
-        const x = interpolateKeyframes([
-            // at time 0, we want x to be 100 
-            { time: 0, value: 100},
-            // at time 1.5, we want x to be 550 (using cubic easing)
-            { time: 1.5, value: 550, easing: 'cubic-in-out'},
-            // at time 1.5, we want x to be 200 (using cubic easing)
-            { time: 3, value: 200, easing: 'cubic-in-out'},
-        ], time)
         
-        try{
-            ctx.drawImage(images[frameNumber], x, 0, 1080/2, 760/2)
-        }catch(e){
-            console.log(e)
-        }
-        */
     }
 
     const clearCanvas = () => {
@@ -105,40 +90,99 @@ function App() {
     
 
     const startAnimation = () => {
-        console.log(playingCanvas)
+        // console.log(playingCanvas)
 
         if(playingCanvas < 3){
-            stopAnimation()
+            // stopAnimation()
             return
             // console.log(vFrames1,vFrames2,vFrames3)
         }
         if(!canvas){
             canvas = document.getElementById("my-canvas")
         }
-
+        // if(ctx){
+        //     return
+        // }
         if(canvas && canvas.getContext){
             ctx = canvas.getContext("2d")
             if(ctx){
-                animate()
+                play()
             }
         }
     }
 
-    const stopAnimation = () => {
-        cancelAnimationFrame(animate)
+    const stopAnimation = async() => {
+        console.log(`stopAnimation called`)
+        pause = true
+        isPlaying = false
+
+        return new Promise((resolve, reject) => {
+            setTimeout(()=>{
+                pause = false
+                resolve(true)
+            },2000)
+        })
+        
     }
 
-    const animate = ()=>{
+    const stop = async()=>{
+        console.log(`animation stoped`)
+        // cancelAnimationFrame(animate)
+        await stopAnimation()
+    }
+
+    const play = async()=>{
+        // return
+        if(isPlaying){
+            console.log(`player already playing`)   
+            return 
+        }
+        // console.log(`play()`)
+        // cancelAnimationFrame(animate)
+        requestAnimationFrame(a=>animate(a))
+        isPlaying = true
+    }
+
+    const animate = (init)=>{
+        if(pstopRef.current){
+            // console.log(`pstop=${pstopRef.current?'y':'n'}`)
+            return
+        }
+        // if(pstop || ppause ){
+        //     // console.log(`pstop=${pstop?'y':'n'}, pplay=${pplay?'y':'n'}, ppause=${ppause?'y':'n'}`)
+        //     return
+        // }
+        // console.log(init, `pause=${pause?'yes':'no'}`)
+        // console.log(`pstop=${pstopRef.current?'y':'n'}, pplay=${pplay?'y':'n'}, ppause=${ppause?'y':'n'}`)
+
+
         if(++frameNumber > frameCount){
             frameNumber = 1
         }
 
         const time = frameNumber / frameRate
         const sec = Math.round(time * 10) / 10
+
+        if(frameNumber % frameSkip === 0){
+            isPlaying = false
+            // console.log(`skipping frame ${frameNumber}`)
+            // requestAnimationFrame(animate)
+            if(!pause || init === 0){
+                play()
+            }else{
+                stop()
+            }
+            return
+        }
         clearCanvas()
         
         renderFrame(time)
-        requestAnimationFrame(animate)
+        isPlaying = false
+        if(!pause || init === 0){
+            play()
+        }else{
+            stop()
+        }
     }
     const fetchVFrames = async () => {
         let fetchNumber = 0
@@ -165,15 +209,49 @@ function App() {
 
     }
     const main = f => {
-        stopAnimation()
-        fetchVFrames()
+        stopAnimation().then(r=>fetchVFrames())
+        
     }
 
-    useEffect(startAnimation,[playingCanvas])
+    useEffect(f=>{startAnimation()},[playingCanvas])
     useEffect(main,[])
+
+
+    const onPause = () => {
+        setPause(true)
+        isPlaying = false
+        pause = true
+
+        stop()
+    }
+
+    const onPlay = () => {
+        setPlay(true)
+        setPause(false)
+        setStop(false)
+        pstopRef.current = false
+        isPlaying = false
+
+        startAnimation()
+    }
+
+    const onStop = () => {
+        setStop(true)
+        isPlaying = false
+        stop()
+
+    }
 
     return (<><div>
         <canvas id="my-canvas" width="1280" height="720"></canvas>  
+
+        <div>
+            <div style={{display:'flex'}}>
+                <button onClick={e=>onPlay()}>Play</button>
+                <button onClick={e=>onPause()}>Pause</button>
+                <button onClick={e=>onStop()}>Stop</button>
+            </div>
+        </div>
     </div></>)
 }
 

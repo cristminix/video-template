@@ -15,7 +15,11 @@ export function drawImageCoverFit(context, image, x, y, width, height) {
   context.clip();
 
   // Draw the image
+  try{
   context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
-
+}catch(e){
+  console.error(e)
+}
   context.restore();
+
 }
