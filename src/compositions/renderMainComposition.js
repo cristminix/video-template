@@ -28,7 +28,7 @@ export function renderMainComposition(
   context.globalAlpha = 1 - slideProgress;
 
   // Render the polaroid picture scene using relative sizes
-  renderThreePictures(context, image1, image2, image3, 0.9636 * width, 0.8843 * height, time);
+  renderThreePictures(context, image1, image2, image3, 0.7 * width, 0.6 * height, time);
 
   context.restore();
 

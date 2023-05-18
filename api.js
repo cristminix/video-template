@@ -7,9 +7,9 @@ app.get("/api/sequence", async (req, res) => {
 
 	// console.log(dirname)
 	const videoPath = `public/assets/pexels-4782135.mp4`
-	const base = `public/tmp-small/${dir}`
+	const base = `tmp-small/${dir}`
 	// console.log(`Extracting frames from video 1... ${dir}`)
-	const frames = await getVideoFrameReader(videoPath, base, frameRate)
+	const frames = await getVideoFrameReader(videoPath, `public/${base}`, frameRate)
 	res.json({ frames, base })
 })
 

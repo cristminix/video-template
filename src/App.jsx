@@ -6,8 +6,28 @@ import {interpolateKeyframes} from "./fn"
 
 import {renderMainComposition} from "./compositions/renderMainComposition"
 
-    let isPlaying = false
+let isPlaying = false
 
+const timeout = async (t) => {
+    return new Promise((resolve,reject)=>{
+        setTimeout(()=>{
+            resolve()
+        },t)
+    })
+}
+
+class Sequence {
+    constructor( start = 0, end = Infinity, interval = 1 ) {
+        this.start = start;
+        this.end = end;
+        this.interval = interval;
+    }
+    * [Symbol.iterator]() {
+        for( let index = this.start; index <= this.end; index += this.interval ) {
+            yield index;
+        }
+    }
+}
 function App() {
     const [frames, setFrames] = useState([])
     const [dir, setDir] = useState('video-3')
@@ -27,7 +47,7 @@ function App() {
 
     const duration = 9.15
     const frameRate = 60
-    const frameSkip = 3
+    const frameSkip = 1
     const frameCount = Math.floor(duration * frameRate)
     const images = []
     let pause = false
@@ -39,20 +59,38 @@ function App() {
     const logo = new Image()
     logo.src = "logo.svg"
 
+    const sequence =  new Sequence(1,  frameCount, frameSkip)
+
+
     let canvas,ctx,frameNumber = 0
 
     const getImageFrame = (index) => {
+
+
+
         const {frames, base} = index === 1 ? vFrames1 : index === 2 ? vFrames2 : vFrames3
         const images = index === 1 ? images1 : index === 2 ? images2 : images3
 
         if(!images[frameNumber]){
             images[frameNumber] = new Image()
-            images[frameNumber].src = `${base}/${frames[frameNumber]}`
+            if(frames[frameNumber]){
+                images[frameNumber].src = `${base}/${frames[frameNumber]}`
+            }
+            
         }
 
         return images[frameNumber]
     }
+    const renderFrameNumber = (frame) => {
+        console.log(`rendering frame ${frame}`)
+        const time = frame / frameRate
+        const sec = Math.round(time * 10) / 10
+        console.log(`time ${time}, sec=${sec}`)
+        clearCanvas()
+        renderFrame(time)
 
+
+    }
     const renderFrame = (time) => {
 
         renderMainComposition(
@@ -130,7 +168,7 @@ function App() {
         // cancelAnimationFrame(animate)
         await stopAnimation()
     }
-
+    let fpss= []
     const play = async()=>{
         // return
         if(isPlaying){
@@ -139,51 +177,39 @@ function App() {
         }
         // console.log(`play()`)
         // cancelAnimationFrame(animate)
-        requestAnimationFrame(a=>animate(a))
+        // requestAnimationFrame(a=>animate(a))
         isPlaying = true
-    }
-
-    const animate = (init)=>{
-        if(pstopRef.current){
-            // console.log(`pstop=${pstopRef.current?'y':'n'}`)
-            return
-        }
-        // if(pstop || ppause ){
-        //     // console.log(`pstop=${pstop?'y':'n'}, pplay=${pplay?'y':'n'}, ppause=${ppause?'y':'n'}`)
-        //     return
-        // }
-        // console.log(init, `pause=${pause?'yes':'no'}`)
-        // console.log(`pstop=${pstopRef.current?'y':'n'}, pplay=${pplay?'y':'n'}, ppause=${ppause?'y':'n'}`)
-
-
-        if(++frameNumber > frameCount){
-            frameNumber = 1
-        }
-
-        const time = frameNumber / frameRate
-        const sec = Math.round(time * 10) / 10
-
-        if(frameNumber % frameSkip === 0){
-            isPlaying = false
-            // console.log(`skipping frame ${frameNumber}`)
-            // requestAnimationFrame(animate)
-            if(!pause || init === 0){
-                play()
-            }else{
-                stop()
-            }
-            return
-        }
-        clearCanvas()
+        const interval = 0.04 * (1000)
+        let second = 0
+        let fps = 0
         
-        renderFrame(time)
-        isPlaying = false
-        if(!pause || init === 0){
-            play()
-        }else{
-            stop()
+        let prevSecond = 0, nextSecond=0
+        for (const frame of sequence) {
+            frameNumber = frame
+            fps += 1
+            renderFrameNumber(frame)
+            await timeout(interval)
+            second += (interval/1000)
+            nextSecond = Math.ceil(second)
+            if(nextSecond >= 1){
+            if(nextSecond > prevSecond){
+                prevSecond = nextSecond
+                console.log(`fps = ${fps}`)
+                fpss.push(fps)
+                fps = 0
+
+            }}
+            console.log(`second = ${second}`)
+            console.log(`nextSecond = ${nextSecond}`)
+            console.log(`prevSecond = ${prevSecond}`)
+            console.log(`fps = ${fpss.reduce((avg, value, _, { length }) => Math.ceil(avg + value / length), 0)}`)
         }
+        isPlaying = false
+        fpss=[fpss.pop()]
+        play()
     }
+
+
     const fetchVFrames = async () => {
         let fetchNumber = 0
         playCanvas(fetchNumber)
